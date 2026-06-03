@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, Plus } from "lucide-react";
 import TaskInput from "./components/TaskInput";
 import TaskList from "./components/TaskList";
 import AIChat from "./components/AIChat";
@@ -14,6 +14,7 @@ export default function App() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [theme, setTheme] = useState<"light" | "dark">(getInitialTheme);
   const [subtaskParentId, setSubtaskParentId] = useState<number | null>(null);
+  const [inputOpen, setInputOpen] = useState(false);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -40,7 +41,7 @@ export default function App() {
         className="flex items-center justify-between px-5 py-3
                    border-b border-zinc-100 dark:border-zinc-800/50
                    bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl
-                   select-none"
+                   select-none shrink-0"
         data-tauri-drag-region
       >
         <div className="flex items-center gap-3">
@@ -73,15 +74,31 @@ export default function App() {
         </div>
       </header>
 
-      {/* 内容区 */}
+      {/* 任务列表（占据全部空间） */}
+      <TaskList
+        refreshKey={refreshKey}
+        onAddSubtask={handleAddSubtask}
+      />
+
+      {/* 悬浮添加按钮 */}
+      <button
+        onClick={() => { setSubtaskParentId(null); setInputOpen(true); }}
+        className="fixed bottom-20 right-4 z-30 w-14 h-14 rounded-2xl
+                   bg-indigo-600 hover:bg-indigo-500 active:scale-95
+                   text-white shadow-lg shadow-indigo-500/25
+                   flex items-center justify-center
+                   transition-all duration-200"
+      >
+        <Plus size={24} />
+      </button>
+
+      {/* 悬浮输入弹窗 */}
       <TaskInput
         onTaskAdded={handleTaskAdded}
         parentId={subtaskParentId}
         onCancelSubtask={() => setSubtaskParentId(null)}
-      />
-      <TaskList
-        refreshKey={refreshKey}
-        onAddSubtask={handleAddSubtask}
+        open={inputOpen}
+        onOpenChange={setInputOpen}
       />
 
       {/* AI 助手 */}

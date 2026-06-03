@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { Search, Loader, Pause, Circle, Archive, Check, Inbox } from "lucide-react";
+import { Search, Loader, Pause, Circle, Archive, Check, Inbox, X } from "lucide-react";
 import type { Task } from "../types/task";
 import { isTerminal } from "../types/task";
 import { getAllTasks } from "../lib/tauri";
@@ -114,28 +114,37 @@ export default function TaskList({ refreshKey, onAddSubtask }: Props) {
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      {/* 搜索栏 + 统计 */}
-      <div className="px-4 py-3">
-        <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+      {/* 搜索栏 */}
+      <div className="px-4 pt-4 pb-2">
+        <div className="relative group">
+          <div className="absolute inset-0 bg-indigo-500/5 dark:bg-indigo-500/10 rounded-2xl
+                          opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none" />
+          <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2
+                                       text-zinc-400 group-focus-within:text-indigo-400 transition-colors" />
           <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder="搜索任务..."
-            className="w-full pl-9 pr-16 py-2 text-sm rounded-xl
+            className="w-full pl-10 pr-16 py-2.5 text-sm rounded-2xl
                        border border-zinc-200 dark:border-zinc-700
                        bg-zinc-50 dark:bg-zinc-800/50
-                       focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300
-                       dark:focus:border-indigo-600
+                       focus:outline-none focus:border-indigo-300 dark:focus:border-indigo-600
+                       focus:bg-white dark:focus:bg-zinc-900
                        placeholder:text-zinc-400 dark:placeholder:text-zinc-500
-                       text-zinc-800 dark:text-zinc-200" />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-            {search && (
-              <span className="text-[11px] text-zinc-400">{totalVisible} 条</span>
-            )}
-            {!search && stats.total > 0 && (
-              <span className="text-[11px] text-zinc-400">
-                {stats.done}/{stats.total} 完成
+                       text-zinc-800 dark:text-zinc-200
+                       transition-all duration-200" />
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+            {search ? (
+              <>
+                <span className="text-[11px] text-zinc-400">{totalVisible} 条</span>
+                <button onClick={() => setSearch("")}
+                  className="text-zinc-400 hover:text-zinc-600 transition-colors">
+                  <X size={13} />
+                </button>
+              </>
+            ) : stats.total > 0 ? (
+              <span className="text-[11px] text-zinc-400 tabular-nums">
+                {stats.done}/{stats.total}
               </span>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

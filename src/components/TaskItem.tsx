@@ -149,7 +149,7 @@ export default function TaskItem({
 
   const si = statusInfo(task.status);
   const catStyle = CATEGORY_STYLES[task.category] || CATEGORY_STYLES["其他"];
-  const indentLeft = depth * 24;
+  const indentLeft = depth * 16;
   const ov = overdue(task.due_date);
 
   // ══════════ 编辑模式 ══════════
@@ -358,14 +358,12 @@ export default function TaskItem({
               title="搁置">
               <Archive size={13} />
             </button>
-            {!isSubtask && (
-              <button onClick={onAddSubtask}
-                className="p-1.5 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/30
-                           text-zinc-400 hover:text-indigo-500 transition-colors"
-                title="添加子任务">
-                <Plus size={14} />
-              </button>
-            )}
+            <button onClick={onAddSubtask}
+              className="p-1.5 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/30
+                         text-zinc-400 hover:text-indigo-500 transition-colors"
+              title="添加子任务">
+              <Plus size={14} />
+            </button>
             <button onClick={startEdit}
               className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700
                          text-zinc-400 hover:text-zinc-600 transition-colors"
