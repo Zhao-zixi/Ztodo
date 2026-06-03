@@ -121,12 +121,12 @@ export default function TaskList({ refreshKey, onAddSubtask, search }: Props) {
             <div key={group.key} className="mb-1">
               {/* 只在有任务时显示分组头 */}
               {(group.tasks.length > 0) && (
-                <div className={`flex items-center gap-2 px-4 py-2 rounded-lg mx-1 ${muted ? "opacity-60" : ""}`}>
-                  <div className={`w-2 h-2 rounded-full ${group.dot}`} />
-                  <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                <div className={`flex items-center gap-2.5 px-4 py-2.5 rounded-lg mx-1 ${muted ? "opacity-60" : ""}`}>
+                  <div className={`w-2.5 h-2.5 rounded-full ${group.dot}`} />
+                  <span className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     {group.label}
                   </span>
-                  <span className="text-[11px] text-zinc-400 tabular-nums">{group.count}</span>
+                  <span className="text-xs text-zinc-400 tabular-nums">{group.count}</span>
                 </div>
               )}
               {group.tasks.length > 0 &&

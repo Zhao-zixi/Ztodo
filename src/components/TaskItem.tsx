@@ -259,7 +259,7 @@ export default function TaskItem({
 
   return (
     <div
-      className={`group relative flex items-center gap-3 px-4 py-2.5 mx-2 my-0.5
+      className={`group relative flex items-center gap-4 px-4 py-3 mx-2 my-0.5
                   rounded-xl transition-all duration-200
                   hover:bg-zinc-50 dark:hover:bg-zinc-800/50
                   ${terminal ? "opacity-50" : ""}
@@ -303,7 +303,7 @@ export default function TaskItem({
       <div className="flex-1 min-w-0" onClick={startEdit}>
         {/* 标题行 */}
         <div className="flex items-baseline gap-2">
-          <span className={`text-sm truncate select-none
+          <span className={`text-base truncate select-none
             ${terminal
               ? "text-zinc-400 dark:text-zinc-500 line-through"
               : "text-zinc-800 dark:text-zinc-200 font-medium"}`}>
@@ -314,12 +314,12 @@ export default function TaskItem({
           {!terminal && (
             <div className="flex items-center gap-1.5 flex-shrink-0">
               {task.category !== "默认" && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium ${catStyle}`}>
+                <span className={`text-[11px] px-1.5 py-0.5 rounded-md font-medium ${catStyle}`}>
                   {task.category}
                 </span>
               )}
               {task.due_date && (
-                <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md font-medium
+                <span className={`inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-md font-medium
                   ${ov
                     ? "bg-red-50 text-red-500 dark:bg-red-950/30 dark:text-red-400"
                     : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"}`}>
@@ -328,7 +328,7 @@ export default function TaskItem({
                 </span>
               )}
               {task.progress > 0 && task.status === "进行中" && (
-                <span className="text-[10px] text-indigo-500 font-mono">{task.progress}%</span>
+                <span className="text-[11px] text-indigo-500 font-mono">{task.progress}%</span>
               )}
             </div>
           )}
@@ -336,7 +336,7 @@ export default function TaskItem({
 
         {/* 备注预览 */}
         {task.note && (
-          <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500 truncate select-none">
+          <p className="mt-0.5 text-sm text-zinc-400 dark:text-zinc-500 truncate select-none">
             {task.note}
           </p>
         )}

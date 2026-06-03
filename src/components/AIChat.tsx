@@ -102,18 +102,18 @@ export default function AIChat({ onRefresh, llmConfig, inline }: Props) {
   // ══════ 内嵌模式（在 App header 下方展开）══════
   if (inline) {
     return (
-      <div className="bg-white dark:bg-zinc-950 flex flex-col" style={{ height: "380px" }}>
+      <div className="bg-white dark:bg-zinc-950 flex flex-col" style={{ height: "400px" }}>
         {/* 标签栏 */}
-        <div className="flex items-center gap-1 px-4 py-2 shrink-0">
+        <div className="flex items-center gap-1.5 px-4 py-2.5 shrink-0">
           <button onClick={() => setTab("chat")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all
+            className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-lg transition-all
               ${tab === "chat"
                 ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"
                 : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"}`}>
             <MessageCircle size={12} />对话
           </button>
           <button onClick={() => setTab("skills")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all
+            className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-lg transition-all
               ${tab === "skills"
                 ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"
                 : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"}`}>
@@ -131,11 +131,11 @@ export default function AIChat({ onRefresh, llmConfig, inline }: Props) {
                                  flex items-center justify-center mb-3">
                     <Sparkles size={18} className="text-indigo-500" />
                   </div>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">有什么我可以帮你的？</p>
-                  <div className="mt-2 space-y-1">
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">有什么我可以帮你的？</p>
+                  <div className="mt-2 space-y-1.5">
                     {["写周报", "今天有什么任务？", "帮我创建一个高优任务"].map((t, i) => (
                       <button key={i} onClick={() => { setInput(t); }}
-                        className="block text-[11px] text-zinc-400 hover:text-indigo-500
+                        className="block text-sm text-zinc-400 hover:text-indigo-500
                                    transition-colors px-2 py-0.5 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
                         「{t}」
                       </button>
@@ -147,14 +147,14 @@ export default function AIChat({ onRefresh, llmConfig, inline }: Props) {
                   <div key={i}>
                     {msg.role === "user" ? (
                       <div className="flex justify-end">
-                        <div className="max-w-[80%] bg-indigo-600 text-white text-xs
-                                       px-3 py-2 rounded-2xl rounded-br-md leading-relaxed">
+                        <div className="max-w-[80%] bg-indigo-600 text-white text-sm
+                                       px-3.5 py-2.5 rounded-2xl rounded-br-md leading-relaxed">
                           {msg.content}
                         </div>
                       </div>
                     ) : (
                       <div>
-                        <div className="text-xs text-zinc-700 dark:text-zinc-300
+                        <div className="text-sm text-zinc-700 dark:text-zinc-300
                                        whitespace-pre-wrap leading-relaxed">
                           {msg.content}
                         </div>
@@ -195,8 +195,8 @@ export default function AIChat({ onRefresh, llmConfig, inline }: Props) {
 
             {/* 输入区 */}
             <div className="px-4 py-3 shrink-0 border-t border-zinc-100 dark:border-zinc-800">
-              <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800
-                             rounded-xl px-3 py-2
+              <div className="flex items-center gap-2.5 bg-zinc-100 dark:bg-zinc-800
+                             rounded-xl px-3.5 py-2.5
                              focus-within:ring-2 focus-within:ring-indigo-500/20
                              transition-all">
                 <input
@@ -206,7 +206,7 @@ export default function AIChat({ onRefresh, llmConfig, inline }: Props) {
                   onKeyDown={handleKeyDown}
                   placeholder={llmConfig.apiKey ? "输入指令..." : "请先在 ⚙ 中配置 API Key"}
                   disabled={loading}
-                  className="flex-1 bg-transparent text-xs
+                  className="flex-1 bg-transparent text-sm
                              focus:outline-none text-zinc-800 dark:text-zinc-200
                              placeholder:text-zinc-400"
                 />
