@@ -75,13 +75,13 @@ export default function App() {
 
         {/* 搜索栏 */}
         <div className="flex-1 max-w-[260px] relative" data-tauri-drag-region={false as any}>
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none z-10" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="搜索任务..."
-            className="w-full pl-8 pr-8 py-2.5 text-sm rounded-xl
+            className="w-full pl-9 pr-8 py-2.5 text-sm rounded-xl
                        border border-zinc-200 dark:border-zinc-700
                        bg-zinc-50 dark:bg-zinc-800/50
                        focus:outline-none focus:border-indigo-300 dark:focus:border-indigo-600
