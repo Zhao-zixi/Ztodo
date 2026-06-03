@@ -2,7 +2,7 @@
  * Agent 循环 — 用户输入 → LLM → 工具调用 → 执行 → 结果 → LLM → 最终回复。
  */
 
-import type { Message, ToolCall, LLMConfig } from "./llmClient";
+import type { Message, LLMConfig } from "./llmClient";
 import { createLLMClient } from "./llmClient";
 import { ALL_TOOLS } from "./toolRegistry";
 import { executeTool } from "./toolExecutor";
