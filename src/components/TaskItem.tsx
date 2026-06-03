@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import {
   Trash2, Pencil, Calendar, ChevronRight, ChevronDown, Plus,
-  Circle, Loader, Pause, Check, Archive,
+  Circle, Loader, Pause, Check, Archive, Clock,
 } from "lucide-react";
 import type { Task } from "../types/task";
 import { isTerminal } from "../types/task";
@@ -20,34 +20,31 @@ interface Props {
 const CATEGORIES = ["工作", "个人", "学习", "生活", "其他"];
 
 const STATUSES = [
-  { key: "待开始", label: "待开始", icon: Circle, color: "text-zinc-400", bg: "bg-zinc-100 dark:bg-zinc-800" },
-  { key: "进行中", label: "进行中", icon: Loader, color: "text-blue-500", bg: "bg-blue-100 dark:bg-blue-900/30" },
-  { key: "等待中", label: "等待中", icon: Pause, color: "text-amber-500", bg: "bg-amber-100 dark:bg-amber-900/30" },
-  { key: "已完成", label: "已完成", icon: Check, color: "text-green-500", bg: "bg-green-100 dark:bg-green-900/30" },
-  { key: "已搁置", label: "已搁置", icon: Archive, color: "text-zinc-500", bg: "bg-zinc-200 dark:bg-zinc-700" },
+  { key: "待开始", label: "待开始", icon: Circle, color: "text-zinc-400", dot: "bg-zinc-300" },
+  { key: "进行中", label: "进行中", icon: Loader, color: "text-blue-500", dot: "bg-blue-400 animate-pulse" },
+  { key: "等待中", label: "等待中", icon: Pause, color: "text-amber-500", dot: "bg-amber-400" },
+  { key: "已完成", label: "已完成", icon: Check, color: "text-emerald-500", dot: "bg-emerald-400" },
+  { key: "已搁置", label: "已搁置", icon: Archive, color: "text-zinc-400", dot: "bg-zinc-400" },
 ];
 
-const PRIORITY_CONFIG = [
-  { label: "无", color: "bg-zinc-300 dark:bg-zinc-600" },
-  { label: "低", color: "bg-blue-400" },
-  { label: "中", color: "bg-amber-400" },
-  { label: "高", color: "bg-red-400" },
-];
+const PRIORITY_LABELS = ["", "低", "中", "高"];
+const PRIORITY_RINGS = ["", "ring-blue-400/30", "ring-amber-400/30", "ring-red-400/30"];
+const PRIORITY_DOTS = ["", "bg-blue-400", "bg-amber-400", "bg-red-400"];
 
-const CATEGORY_COLORS: Record<string, string> = {
-  工作: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  个人: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-  学习: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  生活: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
-  其他: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
+const CATEGORY_STYLES: Record<string, string> = {
+  工作: "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400",
+  个人: "bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400",
+  学习: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400",
+  生活: "bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400",
+  其他: "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400",
 };
 
 const fmtDate = (d: string): string => {
   const date = new Date(d);
   const days = Math.ceil((date.getTime() - Date.now()) / 86400000);
   if (days < 0) return `过期 ${Math.abs(days)} 天`;
-  if (days === 0) return "今天";
-  if (days === 1) return "明天";
+  if (days === 0) return "今天截止";
+  if (days === 1) return "明天截止";
   if (days < 7) return `${days} 天后`;
   return date.toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
 };
@@ -78,29 +75,20 @@ export default function TaskItem({
     if (editing && inputRef.current) { inputRef.current.focus(); inputRef.current.select(); }
   }, [editing]);
 
-  // ── 切换状态 ──
   const cycleStatus = async () => {
     if (terminal) return;
     const order = ["待开始", "进行中", "等待中"];
     const idx = order.indexOf(task.status);
     const next = order[(idx + 1) % order.length];
-
-    // 联动进度
     const extra: Record<string, unknown> = {};
-    if (next === "进行中" && task.progress === 0) extra.progress = 0;
     if (next === "待开始") extra.progress = 0;
-
     await updateTask({ id: task.id, status: next, ...extra } as any);
     onChanged();
   };
 
-  // ── 标记完成 ──
   const markDone = async () => {
     await updateTask({ id: task.id, status: "已完成" });
-
-    // 更新父进度
     if (task.parent_id) await syncParentProgress(task.parent_id);
-
     onChanged();
   };
 
@@ -109,15 +97,13 @@ export default function TaskItem({
     onChanged();
   };
 
-  // ── 删除 ──
   const handleDelete = async () => {
-    if (!confirm("确定删除这个任务吗？")) return;
+    if (!confirm(`确定删除「${task.title}」？`)) return;
     await deleteTask(task.id);
     if (task.parent_id) await syncParentProgress(task.parent_id);
     onChanged();
   };
 
-  // ── 同步父进度 ──
   const syncParentProgress = async (parentId: number) => {
     const all = await getAllTasks();
     const siblings = all.filter((t) => t.parent_id === parentId);
@@ -128,7 +114,6 @@ export default function TaskItem({
     }
   };
 
-  // ── 编辑 ──
   const startEdit = () => {
     if (terminal) return;
     setEditTitle(task.title);
@@ -144,12 +129,9 @@ export default function TaskItem({
   const saveEdit = async () => {
     const t = editTitle.trim();
     if (!t) return;
-
-    // 状态联动进度
     let prog = editProgress;
     if (editStatus === "已完成") prog = 100;
     else if (editStatus === "待开始" && task.status !== "待开始") prog = 0;
-
     await updateTask({
       id: task.id, title: t, note: editNote.trim(),
       category: editCategory, priority: editPriority,
@@ -166,237 +148,239 @@ export default function TaskItem({
   };
 
   const si = statusInfo(task.status);
-  const pc = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG[0];
-  const catColor = CATEGORY_COLORS[task.category] || CATEGORY_COLORS["其他"];
-  const indentLeft = depth * 20;
+  const catStyle = CATEGORY_STYLES[task.category] || CATEGORY_STYLES["其他"];
+  const indentLeft = depth * 24;
   const ov = overdue(task.due_date);
 
-  // ────────── 编辑模式 ──────────
+  // ══════════ 编辑模式 ══════════
   if (editing) {
     return (
-      <div className="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800 bg-indigo-50/50 dark:bg-indigo-950/20"
-        style={{ paddingLeft: `${16 + indentLeft}px` }}>
-        <div className="space-y-2">
+      <div
+        className="mx-3 my-1 rounded-xl border-2 border-indigo-200 dark:border-indigo-800
+                   bg-white dark:bg-zinc-900 shadow-lg shadow-indigo-500/5 overflow-hidden"
+        style={{ marginLeft: `${12 + indentLeft}px` }}
+      >
+        <div className="p-4 space-y-3">
           <input ref={inputRef} type="text" value={editTitle}
             onChange={(e) => setEditTitle(e.target.value)} onKeyDown={handleEditKeyDown}
             placeholder="任务标题"
-            className="w-full px-2 py-1.5 text-sm rounded border border-indigo-300 
-                       dark:border-indigo-600 bg-white dark:bg-zinc-800
-                       focus:outline-none focus:ring-2 focus:ring-indigo-500 text-zinc-800 dark:text-zinc-200" />
-          <textarea value={editNote} onChange={(e) => setEditNote(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Escape") setEditing(false); }}
-            placeholder="备注..." rows={2}
-            className="w-full px-2 py-1.5 text-xs rounded border border-zinc-200 
-                       dark:border-zinc-700 bg-white dark:bg-zinc-800 resize-none
-                       focus:outline-none focus:ring-1 focus:ring-indigo-500
-                       text-zinc-600 dark:text-zinc-400" />
+            className="w-full px-0 py-1 text-base font-medium bg-transparent
+                       border-b-2 border-indigo-200 dark:border-indigo-700
+                       focus:outline-none focus:border-indigo-500
+                       text-zinc-800 dark:text-zinc-100 placeholder:text-zinc-300" />
 
-          {/* 状态选择器 */}
-          <div>
-            <label className="block text-[11px] text-zinc-400 mb-1">状态</label>
-            <div className="flex gap-1">
-              {STATUSES.map((s) => {
-                const Icon = s.icon;
-                return (
-                  <button key={s.key} onClick={() => setEditStatus(s.key)}
-                    className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] transition-all
-                      ${editStatus === s.key
-                        ? `${s.bg} ${s.color} font-medium ring-1 ring-inset ring-zinc-300 dark:ring-zinc-600`
-                        : "text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"}`}>
-                    <Icon size={12} />{s.label}
-                  </button>
-                );
-              })}
-            </div>
+          <textarea value={editNote} onChange={(e) => setEditNote(e.target.value)}
+            placeholder="添加备注..."
+            rows={2}
+            className="w-full px-3 py-2 text-sm rounded-lg
+                       bg-zinc-50 dark:bg-zinc-800 resize-none
+                       border border-zinc-200 dark:border-zinc-700
+                       focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300
+                       text-zinc-600 dark:text-zinc-300 placeholder:text-zinc-300" />
+
+          {/* 状态选择 */}
+          <div className="flex items-center gap-1 flex-wrap">
+            {STATUSES.map((s) => {
+              const Icon = s.icon;
+              const active = editStatus === s.key;
+              return (
+                <button key={s.key} onClick={() => setEditStatus(s.key)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                             transition-all duration-150
+                             ${active
+                               ? `${s.color} bg-zinc-100 dark:bg-zinc-800 shadow-sm`
+                               : "text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"}`}>
+                  <Icon size={13} />{s.label}
+                </button>
+              );
+            })}
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          {/* 分类 / 优先级 / 日期 */}
+          <div className="flex items-center gap-3 flex-wrap">
             <select value={editCategory} onChange={(e) => setEditCategory(e.target.value)}
-              className="px-2 py-1.5 text-xs rounded border border-zinc-200 dark:border-zinc-700 
-                         bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300
-                         focus:outline-none focus:ring-1 focus:ring-indigo-500">
+              className="px-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700
+                         bg-zinc-50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300
+                         focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
               {CATEGORIES.map((c) => (<option key={c} value={c}>{c}</option>))}
             </select>
-            <div className="flex gap-1 items-center justify-center">
-              {PRIORITY_CONFIG.map((p, i) => (
+
+            <div className="flex items-center gap-1">
+              {[0, 1, 2, 3].map((i) => (
                 <button key={i} onClick={() => setEditPriority(i)}
-                  className={`w-6 h-6 rounded-full text-[10px] font-medium transition-all
-                    ${i === editPriority ? `${p.color} text-white scale-110 ring-2 ring-offset-1 ring-zinc-300`
-                      : `${p.color} opacity-40 hover:opacity-70`}`}>
-                  {i === 0 ? "—" : p.label}
+                  className={`w-7 h-7 rounded-full flex items-center justify-center
+                              text-[10px] font-bold transition-all duration-150
+                              ${i === editPriority
+                                ? `${PRIORITY_DOTS[i] || "bg-zinc-400"} text-white scale-110 shadow-md`
+                                : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 hover:scale-105"}`}>
+                  {i === 0 ? "—" : PRIORITY_LABELS[i]}
                 </button>
               ))}
             </div>
-            <input type="date" value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)}
-              className="px-2 py-1.5 text-xs rounded border border-zinc-200 dark:border-zinc-700 
-                         bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300
-                         focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+
+            <div className="relative">
+              <Calendar size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+              <input type="date" value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)}
+                className="pl-7 pr-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700
+                           bg-zinc-50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300
+                           focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+            </div>
           </div>
 
-          {/* 进度（非子任务不显示） */}
+          {/* 进度（子任务） */}
           {isSubtask && editStatus === "进行中" && (
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] text-zinc-400 w-8 text-right">{editProgress}%</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-mono text-zinc-400 w-8">{editProgress}%</span>
               <input type="range" min={0} max={100} step={5} value={editProgress}
                 onChange={(e) => setEditProgress(Number(e.target.value))}
                 className="flex-1 h-1.5 rounded-full accent-indigo-500 cursor-pointer" />
             </div>
           )}
 
-          <div className="flex justify-between items-center">
-            <span className="text-[11px] text-zinc-400">Enter 保存 · Esc 取消</span>
-            <div className="flex gap-2">
-              <button onClick={() => setEditing(false)}
-                className="px-3 py-1 text-xs rounded-md border border-zinc-300 dark:border-zinc-600
-                           text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800">取消</button>
-              <button onClick={saveEdit}
-                className="px-3 py-1 text-xs rounded-md bg-indigo-600 text-white hover:bg-indigo-700">保存</button>
-            </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <button onClick={() => setEditing(false)}
+              className="px-4 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-700
+                         text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
+              取消
+            </button>
+            <button onClick={saveEdit}
+              className="px-4 py-1.5 text-xs rounded-lg bg-indigo-600 text-white
+                         hover:bg-indigo-500 transition-colors shadow-sm">
+              保存
+            </button>
           </div>
         </div>
       </div>
     );
   }
 
-  // ────────── 查看模式 ──────────
+  // ══════════ 查看模式 ══════════
   const StatusIcon = si.icon;
 
   return (
     <div
-      className={`group flex items-start gap-2.5 px-4 py-3 border-b 
-        border-zinc-100 dark:border-zinc-800 transition-colors
-        hover:bg-zinc-50 dark:hover:bg-zinc-800/30
-        ${terminal ? "opacity-50" : ""}
-        ${isSubtask ? "bg-zinc-50/50 dark:bg-zinc-900/20" : ""}`}
-      style={{ paddingLeft: `${16 + indentLeft}px` }}
+      className={`group relative flex items-center gap-3 px-4 py-2.5 mx-2 my-0.5
+                  rounded-xl transition-all duration-200
+                  hover:bg-zinc-50 dark:hover:bg-zinc-800/50
+                  ${terminal ? "opacity-50" : ""}
+                  ${isSubtask ? "ml-2" : ""}`}
+      style={{ marginLeft: `${8 + indentLeft}px` }}
     >
-      {/* 状态图标 — 点击循环切换 */}
+      {/* 优先级左边框 */}
+      {task.priority > 0 && (
+        <div className={`absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full ${PRIORITY_DOTS[task.priority]}`} />
+      )}
+
+      {/* 展开/折叠 */}
+      {hasChildren ? (
+        <button onClick={onToggleCollapse}
+          className="flex-shrink-0 p-0.5 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700
+                     text-zinc-400 transition-colors">
+          {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+        </button>
+      ) : (
+        <div className="w-5 flex-shrink-0" />
+      )}
+
+      {/* 状态圆圈（可点击循环） */}
       <button
-        onClick={terminal ? undefined : cycleStatus}
-        className={`mt-0.5 flex-shrink-0 transition-colors
-          ${terminal ? "cursor-default" : "cursor-pointer hover:scale-110"}`}
-        title={terminal ? si.label : `点击切换状态（当前：${si.label}）`}
+        onClick={cycleStatus}
+        className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center
+                    transition-all duration-200
+                    ${terminal
+                      ? "border-emerald-300 dark:border-emerald-700 bg-emerald-100 dark:bg-emerald-900/30 cursor-default"
+                      : "border-zinc-300 dark:border-zinc-600 hover:border-indigo-400 dark:hover:border-indigo-500 hover:scale-110 cursor-pointer"}`}
+        title={terminal ? si.label : "点击切换状态"}
       >
-        <StatusIcon size={18} className={si.color} />
+        {terminal ? (
+          <Check size={11} className="text-emerald-500" />
+        ) : (
+          <div className={`w-2 h-2 rounded-full ${si.dot}`} />
+        )}
       </button>
 
-      {/* 内容 */}
-      <div className="flex-1 min-w-0">
-        {/* 元数据行 */}
-        <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${si.bg} ${si.color}`}>
-            {si.label}
-          </span>
-          {task.priority > 0 && (
-            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${pc.color}`} />
-          )}
-          {task.category !== "默认" && (
-            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${catColor}`}>
-              {task.category}
-            </span>
-          )}
-          {task.due_date && (
-            <span className={`text-[10px] flex items-center gap-0.5 px-1.5 py-0.5 rounded
-              ${ov ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                   : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"}`}>
-              <Calendar size={10} />{fmtDate(task.due_date)}
-            </span>
-          )}
-          {task.progress > 0 && task.status !== "已完成" && (
-            <span className="text-[10px] text-zinc-400">{task.progress}%</span>
-          )}
-        </div>
-
-        {/* 进度条 */}
-        {task.progress > 0 && task.status !== "已完成" && (
-          <div className="w-full h-1 rounded-full bg-zinc-100 dark:bg-zinc-800 mb-1">
-            <div className="h-full rounded-full bg-indigo-500 transition-all duration-300"
-              style={{ width: `${task.progress}%` }} />
-          </div>
-        )}
-
+      {/* 主内容 */}
+      <div className="flex-1 min-w-0" onClick={startEdit}>
         {/* 标题行 */}
-        <div className="flex items-center gap-1.5">
-          {hasChildren && (
-            <button onClick={onToggleCollapse}
-              className="p-0.5 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-400 flex-shrink-0">
-              {isCollapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
-            </button>
-          )}
-          <span onClick={startEdit}
-            className={`text-sm select-none
-              ${terminal ? "text-zinc-400 dark:text-zinc-500 cursor-default"
-                : isSubtask ? "text-zinc-600 dark:text-zinc-300 hover:text-indigo-600 cursor-pointer"
-                : "text-zinc-800 dark:text-zinc-200 hover:text-indigo-600 cursor-pointer"}`}
-            title={terminal ? "" : "点击编辑"}>
+        <div className="flex items-baseline gap-2">
+          <span className={`text-sm truncate select-none
+            ${terminal
+              ? "text-zinc-400 dark:text-zinc-500 line-through"
+              : "text-zinc-800 dark:text-zinc-200 font-medium"}`}>
             {task.title}
           </span>
+
+          {/* 内联徽章 — 非终态显示 */}
           {!terminal && (
-            <>
-              <button onClick={startEdit}
-                className="opacity-0 group-hover:opacity-100 p-0.5 rounded
-                           hover:bg-zinc-200 dark:hover:bg-zinc-700
-                           text-zinc-400 hover:text-zinc-600 transition-all duration-150" title="编辑">
-                <Pencil size={12} />
-              </button>
-              {!isSubtask && (
-                <button onClick={onAddSubtask}
-                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded
-                             hover:bg-indigo-100 dark:hover:bg-indigo-900/30
-                             text-zinc-400 hover:text-indigo-600 transition-all duration-150" title="添加子任务">
-                  <Plus size={14} />
-                </button>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              {task.category !== "默认" && (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium ${catStyle}`}>
+                  {task.category}
+                </span>
               )}
-            </>
+              {task.due_date && (
+                <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md font-medium
+                  ${ov
+                    ? "bg-red-50 text-red-500 dark:bg-red-950/30 dark:text-red-400"
+                    : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"}`}>
+                  <Clock size={10} />
+                  {fmtDate(task.due_date)}
+                </span>
+              )}
+              {task.progress > 0 && task.status === "进行中" && (
+                <span className="text-[10px] text-indigo-500 font-mono">{task.progress}%</span>
+              )}
+            </div>
           )}
         </div>
 
-        {/* 备注 */}
+        {/* 备注预览 */}
         {task.note && (
-          <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500 line-clamp-2 select-none">
+          <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500 truncate select-none">
             {task.note}
           </p>
         )}
       </div>
 
-      {/* 右侧操作（非终态） */}
-      {!terminal && (
-        <div className="flex items-center gap-0.5 mt-0.5">
-          {/* 完成按钮 */}
-          <button onClick={markDone}
-            className="opacity-0 group-hover:opacity-100 p-1 rounded
-                       hover:bg-green-100 dark:hover:bg-green-900/30
-                       text-zinc-400 hover:text-green-500 transition-all duration-150"
-            title="标记完成">
-            <Check size={14} />
-          </button>
-          {/* 搁置按钮 */}
-          <button onClick={markArchived}
-            className="opacity-0 group-hover:opacity-100 p-1 rounded
-                       hover:bg-zinc-200 dark:hover:bg-zinc-700
-                       text-zinc-400 hover:text-zinc-500 transition-all duration-150"
-            title="搁置">
-            <Archive size={13} />
-          </button>
-          {/* 删除 */}
-          <button onClick={handleDelete}
-            className="opacity-0 group-hover:opacity-100 p-1 rounded
-                       hover:bg-red-100 dark:hover:bg-red-900/30
-                       text-zinc-400 hover:text-red-500 transition-all duration-150"
-            title="删除">
-            <Trash2 size={14} />
-          </button>
-        </div>
-      )}
-      {terminal && (
+      {/* 悬停操作按钮 */}
+      <div className="flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+        {!terminal && (
+          <>
+            <button onClick={markDone}
+              className="p-1.5 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/30
+                         text-zinc-400 hover:text-emerald-500 transition-colors"
+              title="完成">
+              <Check size={14} />
+            </button>
+            <button onClick={markArchived}
+              className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700
+                         text-zinc-400 hover:text-zinc-500 transition-colors"
+              title="搁置">
+              <Archive size={13} />
+            </button>
+            {!isSubtask && (
+              <button onClick={onAddSubtask}
+                className="p-1.5 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/30
+                           text-zinc-400 hover:text-indigo-500 transition-colors"
+                title="添加子任务">
+                <Plus size={14} />
+              </button>
+            )}
+            <button onClick={startEdit}
+              className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700
+                         text-zinc-400 hover:text-zinc-600 transition-colors"
+              title="编辑">
+              <Pencil size={13} />
+            </button>
+          </>
+        )}
         <button onClick={handleDelete}
-          className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md mt-0.5
-                     hover:bg-red-100 dark:hover:bg-red-900/30
-                     text-zinc-400 hover:text-red-500 transition-all duration-150"
+          className="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30
+                     text-zinc-400 hover:text-red-500 transition-colors"
           title="删除">
-          <Trash2 size={15} />
+          <Trash2 size={14} />
         </button>
-      )}
+      </div>
     </div>
   );
 }
